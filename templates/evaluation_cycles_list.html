@@ -91,8 +91,8 @@ th {
         <td>{% if c.IsEnabled %}✅ مفعلة{% else %}❌ موقفة{% endif %}</td>
         <td>{{ c.CycleName }}</td>
         <td>{{ c.EvaluationTypeName }}</td>
-        <td>{{ c.StartDate.strftime('%Y-%m-%d') }}</td>
-        <td>{{ c.EndDate.strftime('%Y-%m-%d') }}</td>
+        <td>{{ c.StartDate | format_date }}</td>
+        <td>{{ c.EndDate | format_date }}</td>
         <td>
           <a href="{{ url_for('evaluation_cycles_edit', cycle_id=c.CycleID) }}" class="btn btn-primary btn-sm">تعديل</a>
           <form action="{{ url_for('evaluation_cycles_delete', cycle_id=c.CycleID) }}" method="POST" style="display:inline;"

@@ -1,0 +1,157 @@
+{% extends "layout.html" %}
+{% block title %}تسجيل موظف{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <h4 class="fw-bold mb-4">🧾 تسجيل موظف في الجلسة</h4>
+
+    <span class="badge bg-info mb-3">مسجلين حاليًا: {{ enrollments|length }}</span>
+
+    <div class="card shadow-sm p-4">
+
+        <div class="alert alert-info mb-4">
+            <strong>📊 معلومات الجلسة:</strong><br>
+            • عدد الموظفين المتاحين: <strong>{{ employees|length }}</strong> موظف
+        </div>
+
+        <form method="POST">
+
+            <!-- حقل البحث -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">🔍 بحث بالاسم</label>
+                <input type="text" id="searchInput" class="form-control" placeholder="اكتب اسم الموظف..." onkeyup="performSearch()">
+            </div>
+
+            <!-- شجرة الأقسام (مغلقة في البداية) -->
+            <div class="mb-4" style="max-height: 500px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; background: #fff;">
+                <label class="form-label fw-bold d-block mb-3">👥 اختر الموظفين</label>
+
+                <!-- قسم: بدون قسم -->
+                {% set no_dept_employees = employees|selectattr('DEFAULTDEPTID', 'none')|list %}
+                {% if no_dept_employees|length > 0 %}
+                <details class="mb-3 dept-section">
+                    <summary class="fw-bold bg-light p-3 rounded d-flex justify-content-between align-items-center" style="cursor: pointer;">
+                        <span>👥 بدون قسم ({{ no_dept_employees|length }})</span>
+                        <input type="checkbox" class="ms-3" onchange="toggleGroup(this, 'no-dept-group')">
+                        <small class="text-muted">(تحديد الكل)</small>
+                    </summary>
+                    <div class="ps-4 pt-3 no-dept-group">
+                        {% for e in no_dept_employees %}
+                        <div class="form-check employee-item mb-2">
+                            <input class="form-check-input" type="checkbox" name="employee_ids" value="{{ e.USERID }}" id="emp{{ e.USERID }}">
+                            <label class="form-check-label" for="emp{{ e.USERID }}">
+                                {{ e.NAME }}
+                                {% if e.IsActive == 0 %}<span class="text-danger">(غير نشط)</span>{% endif %}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </details>
+                {% endif %}
+
+                <!-- الأقسام الأخرى -->
+                {% for d in depts %}
+                    {% set dept_employees = employees|selectattr('DEFAULTDEPTID', 'equalto', d.DEPTID)|list %}
+                    {% if dept_employees|length > 0 %}
+                    <details class="mb-3 dept-section">
+                        <summary class="fw-bold bg-light p-3 rounded d-flex justify-content-between align-items-center" style="cursor: pointer;">
+                            <span>🏢 {{ d.DEPTNAME }} ({{ dept_employees|length }})</span>
+                            <input type="checkbox" class="ms-3" onchange="toggleGroup(this, 'dept-{{ d.DEPTID }}-group')">
+                            <small class="text-muted">(تحديد الكل)</small>
+                        </summary>
+                        <div class="ps-4 pt-3 dept-{{ d.DEPTID }}-group">
+                            {% for e in dept_employees %}
+                            <div class="form-check employee-item mb-2">
+                                <input class="form-check-input" type="checkbox" name="employee_ids" value="{{ e.USERID }}" id="emp{{ e.USERID }}">
+                                <label class="form-check-label" for="emp{{ e.USERID }}">
+                                    {{ e.NAME }}
+                                    {% if e.IsActive == 0 %}<span class="text-danger">(غير نشط)</span>{% endif %}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap mt-4">
+                <button type="submit" class="btn btn-success px-4">✅ تسجيل المختارين</button>
+                <button type="button" onclick="selectAllVisible()" class="btn btn-outline-primary btn-sm">تحديد الكل المرئي</button>
+                <a href="{{ url_for('training_session_detail', sid=sid) }}" class="btn btn-secondary">🔙 رجوع</a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+// البحث + فتح القسم تلقائيًا
+function performSearch() {
+    const input = document.getElementById('searchInput').value.toLowerCase().trim();
+    const items = document.querySelectorAll('.employee-item');
+    const sections = document.querySelectorAll('.dept-section');
+
+    let foundInSection = false;
+
+    items.forEach(item => {
+        const label = item.querySelector('label').textContent.toLowerCase();
+        const matches = input === '' || label.includes(input);
+
+        item.style.display = matches ? 'block' : 'none';
+
+        if (matches) {
+            // فتح القسم اللي فيه الموظف
+            const section = item.closest('.dept-section');
+            if (section) {
+                section.open = true;
+            }
+        }
+    });
+}
+
+// تحديد/إلغاء كل الموظفين في قسم
+function toggleGroup(checkbox, groupClass) {
+    const checkboxes = document.querySelectorAll('.' + groupClass + ' .form-check-input');
+    checkboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+}
+
+// تحديد الكل المرئي (بعد البحث)
+function selectAllVisible() {
+    const visible = document.querySelectorAll('.employee-item[style="display: block;"], .employee-item:not([style])');
+    visible.forEach(item => {
+        item.querySelector('.form-check-input').checked = true;
+    });
+}
+</script>
+
+<style>
+/* تحسين مظهر <details> */
+details > summary {
+    list-style: none;
+}
+details > summary::-webkit-details-marker {
+    display: none;
+}
+details > summary::after {
+    content: "▶";
+    float: left;
+    margin-left: 10px;
+    transition: transform 0.3s;
+}
+details[open] > summary::after {
+    transform: rotate(90deg);
+}
+details[open] > summary {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 10px;
+}
+.employee-item {
+    padding: 4px 0;
+}
+</style>
+
+{% endblock %}

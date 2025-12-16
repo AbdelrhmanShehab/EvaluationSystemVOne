@@ -300,19 +300,16 @@
         <td>{{ report.EvaluationDate.strftime('%Y-%m-%d %H:%M') if report.EvaluationDate else '--' }}</td>
         <td>{{ report.EvaluationType or '--' }}</td>
         
-        <!-- VISUAL SCORE BAR -->
-        {% set score_val = report.OverallScore|float or 0 %}
         <td>
-          <div class="score-bar-container" title="{{ "%.2f"|format(score_val) }}%">
+          <div class="score-bar-container" title="{{ "%.2f"|format(report.OverallScore|float) }}%">
             <div class="score-bar 
-              {% if score_val < 60 %}low{% elif score_val < 80 %}medium{% else %}high{% endif %}" 
-              style="width: {{ score_val }}%;">
-              {{ "%.1f"|format(score_val) }}%
+              {% if report.OverallScore|float < 60 %}low{% elif report.OverallScore|float < 80 %}medium{% else %}high{% endif %}" 
+              style="width: {{ report.OverallScore|float }}%;">
+              {{ "%.1f"|format(report.OverallScore|float) }}%
             </div>
           </div>
         </td>
         
-        <!-- VISUAL RATING BADGE -->
         {% set r_class = 'default' %}
         {% if report.OverallRating == 'ممتاز' %}{% set r_class = 'excellent' %}
         {% elif report.OverallRating == 'جيد جدا' %}{% set r_class = 'very-good' %}
@@ -329,10 +326,19 @@
         <td>{{ report.ManagerComments or '--' }}</td>
         <td>{{ report.RecommendationText or '--' }}</td>
         <td>{{ report.TrainingCourseText or '--' }}</td>
-        <td>
-          <a href="{{ url_for('evaluation_details', evaluation_id=report.EvaluationID) }}" class="btn-sm">
-            🖨️ تفاصيل
+        
+        <td style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+          <a href="{{ url_for('evaluation_details', evaluation_id=report.EvaluationID) }}" class="btn-sm" title="طباعة وتفاصيل">
+            🖨️
           </a>
+
+          {% if is_admin %}
+          <form action="{{ url_for('evaluation_delete', evaluation_id=report.EvaluationID) }}" method="POST" style="margin:0;" onsubmit="return confirm('⚠️ هل أنت متأكد تماماً من حذف هذا التقييم؟ لا يمكن التراجع عن هذا الإجراء.');">
+            <button type="submit" class="btn-sm" style="background-color: #dc3545;" title="حذف نهائي">
+              🗑️
+            </button>
+          </form>
+          {% endif %}
         </td>
       </tr>
       {% else %}

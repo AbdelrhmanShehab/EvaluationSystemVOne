@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block title %}تتبع التوظيف - HR Workflow{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="text-center mb-5 p-5 rounded shadow" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9);">
+        <h2 class="fw-bold text-success">📋 تتبع التوظيف - HR Workflow</h2>
+        <p class="lead text-muted">تابع كل مرشح خطوة بخطوة مع فريق الموارد البشرية</p>
+        <a href="{{ url_for('recruitment_manage') }}" class="btn btn-success btn-lg px-5">
+            ➕ إضافة مرشح جديد
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% set stages = [
+            ('New', '🆕 جديد', 'bg-primary'),
+            ('Screening', '🔍 فرز', 'bg-warning'),
+            ('Interview', '🤝 مقابلة', 'bg-info'),
+            ('Offer', '💼 عرض عمل', 'bg-secondary'),
+            ('Hired', '🎉 معين', 'bg-success'),
+            ('Rejected', '❌ مرفوض', 'bg-danger')
+        ] %}
+
+        {% for stage, title, color in stages %}
+        {% set stage_cands = candidates|selectattr('Status', 'equalto', stage)|list %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header {{ color }} text-white text-center py-3">
+                    <h5 class="mb-0">{{ title }} ({{ stage_cands|length }})</h5>
+                </div>
+                <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
+                    {% if stage_cands %}
+                        {% for c in stage_cands %}
+                        <div class="p-3 border-bottom">
+                            <h6 class="mb-1">{{ c.FullName }}</h6>
+                            <small class="text-muted">
+                                📞 {{ c.Phone }}<br>
+                                🏢 {{ c.DEPTNAME or 'غير محدد' }} | {{ c.JobTitle or 'غير محدد' }}
+                            </small>
+                            <div class="mt-2">
+                                <a href="{{ url_for('recruitment_manage', cid=c.CandidateID) }}" class="btn btn-sm btn-outline-primary">✏️ تعديل</a>
+                                {% if c.CV_FileName %}
+                                <a href="{{ url_for('static', filename='uploads/' + c.CV_FileName) }}" target="_blank" class="btn btn-sm btn-outline-secondary">📄 CV</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-center text-muted py-5">لا يوجد مرشحين في هذه المرحلة</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

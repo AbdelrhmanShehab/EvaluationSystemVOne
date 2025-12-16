@@ -1,0 +1,311 @@
+{% extends "layout.html" %}
+{% block title %}إدارة الجلسة التدريبية{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            {% if training_session %}
+                <h4 class="fw-bold mb-1 text-primary">🎓 {{ training_session.TrainingCourseText }}</h4>
+                <div class="text-muted">
+                    📅 {{ training_session.SessionDate|format_date }} 
+                    {% if training_session.EndDate %} 
+                        ⬅️ {{ training_session.EndDate|format_date }} 
+                    {% endif %}
+                </div>
+            {% else %}
+                <h4 class="text-danger">❌ خطأ: الجلسة غير موجودة</h4>
+            {% endif %}
+        </div>
+        <div>
+            {% if training_session %}
+            <a class="btn btn-secondary me-2" href="{{ url_for('training_session_print', sid=training_session.SessionID) }}" target="_blank">
+                🖨️ طباعة
+            </a>
+            <a class="btn btn-primary" href="{{ url_for('training_enroll', sid=training_session.SessionID) }}">
+                ➕ تسجيل طلاب
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if training_session %}
+    
+    <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active fw-bold" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule" type="button">
+                📅 جدول الأيام (Schedule)
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link fw-bold" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button">
+                ✅ الحضور (Attendance)
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link fw-bold" id="grading-tab" data-bs-toggle="tab" data-bs-target="#grading" type="button">
+                📊 الدرجات (Grading)
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="myTabContent">
+
+        <div class="tab-pane fade show active" id="schedule">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    
+                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">🛠️ إضافة يوم جديد</h5>
+                    
+                    <form method="POST" action="{{ url_for('training_day_add', sid=training_session.SessionID) }}" class="row g-3 align-items-end mb-5 bg-light p-3 rounded border">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small">التاريخ (Date)</label>
+                            <input type="date" name="day_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold small">من (Start)</label>
+                            <input type="time" name="start_time" class="form-control">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold small">إلى (End)</label>
+                            <input type="time" name="end_time" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small">الموضوع (Topic)</label>
+                            <input type="text" name="topic" class="form-control" placeholder="مثال: مقدمة">
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-success w-100 fw-bold">➕ إضافة</button>
+                        </div>
+                    </form>
+
+                    <h5 class="fw-bold text-dark mb-3">📅 الأيام المجدولة</h5>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle border">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 5%;">#</th>
+                                    <th style="width: 20%;">التاريخ</th>
+                                    <th style="width: 20%;">التوقيت</th>
+                                    <th style="width: 45%;">الموضوع (Topic)</th>
+                                    <th style="width: 10%;" class="text-center">إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for day in session_days %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    
+                                    <td class="fw-bold">{{ day.DayDate|format_date }}</td> 
+                                    
+                                    <td class="text-muted small">
+                                        {% if day.StartTime %}
+                                            <span class="badge bg-light text-dark border">{{ day.StartTime }}</span>
+                                        {% endif %} 
+                                        {% if day.EndTime %}
+                                            ⬅️ <span class="badge bg-light text-dark border">{{ day.EndTime }}</span>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td>{{ day.Topic or '<span class="text-muted fst-italic">لا يوجد موضوع</span>'|safe }}</td>
+                                    
+                                    <td class="text-center">
+                                        <form method="POST" action="{{ url_for('training_day_delete', did=day.DayID) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا اليوم؟');">
+                                            <button class="btn btn-sm btn-outline-danger border-0" title="حذف">
+                                                🗑️
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        📅❌ لم يتم إضافة أي أيام لهذا التدريب بعد.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="attendance">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between mb-3 align-items-center">
+                        <h5 class="fw-bold text-success mb-0">📝 تسجيل الحضور اليومي</h5>
+                        <button form="attendanceForm" class="btn btn-success fw-bold">
+                            💾 حفظ الحضور
+                        </button>
+                    </div>
+
+                    {% if session_days and enrollments %}
+                    <form id="attendanceForm" method="POST" action="{{ url_for('training_attendance_save', sid=training_session.SessionID) }}">
+                        <div class="table-responsive">
+                            <table class="table table-bordered text-center align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="min-width: 200px;" class="text-start ps-3">اسم الموظف</th>
+                                        {% for day in session_days %}
+                                            <th style="min-width: 100px;">
+                                                <span class="small fw-bold d-block">{{ day.DayDate|format_date }}</span>
+                                            </th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for emp in enrollments %}
+                                    <tr>
+                                        <td class="text-start ps-3 fw-bold">{{ emp.NAME }}</td>
+                                        {% for day in session_days %}
+                                            <td>
+                                                <input type="checkbox" name="attend_{{ day.DayID }}_{{ emp.EnrollmentID }}" 
+                                                       class="form-check-input border-secondary" style="width: 20px; height: 20px; cursor: pointer;"
+                                                       {% if (day.DayID, emp.EnrollmentID) in attendance_set %}checked{% endif %}>
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+                    {% else %}
+                        <div class="alert alert-warning d-flex align-items-center">
+                            ⚠️ &nbsp; يجب إضافة <strong>أيام للجدول</strong> و <strong>تسجيل طلاب</strong> لتتمكن من أخذ الغياب.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="grading">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">📊 النتائج والتقييم النهائي</h5>
+                    
+                    {% if enrollments %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th style="width: 25%;">الموظف</th>
+                                    <th style="width: 15%;">الدرجة (Grade)</th>
+                                    <th style="width: 15%;">النتيجة (Pass/Fail)</th>
+                                    <th style="width: 15%;">الحضور (%)</th>
+                                    <th style="width: 30%;">تحديث</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for e in enrollments %}
+                                <tr>
+                                    <td class="fw-bold text-start ps-3">{{ e.NAME }}</td>
+                                    <td class="fw-bold text-primary">{{ e.Grade if e.Grade is not none else '-' }}</td>
+                                    <td>
+                                        {% if e.PassStatus == 'Passed' %}
+                                            <span class="badge bg-success">ناجح</span>
+                                        {% elif e.PassStatus == 'Failed' %}
+                                            <span class="badge bg-danger">راسب</span>
+                                        {% elif e.PassStatus == 'Excuse' %}
+                                            <span class="badge bg-warning text-dark">بعذر</span>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if e.AttendancePercent and e.AttendancePercent < 50 %}bg-danger{% else %}bg-success{% endif %}" 
+                                                 role="progressbar" style="width: {{ e.AttendancePercent or 0 }}%">
+                                                {{ e.AttendancePercent or 0 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" id="grade-{{ e.EnrollmentID }}" class="form-control grade-input" 
+                                                placeholder="Score" value="{{ e.Grade if e.Grade is not none else '' }}" 
+                                                data-eid="{{ e.EnrollmentID }}">
+
+                                            <select id="pass-{{ e.EnrollmentID }}" class="form-select pass-select" 
+                                                    data-eid="{{ e.EnrollmentID }}">
+                                                <option value="">اختر...</option>
+                                                <option value="Passed" {% if e.PassStatus=='Passed' %}selected{% endif %}>ناجح</option>
+                                                <option value="Failed" {% if e.PassStatus=='Failed' %}selected{% endif %}>راسب</option>
+                                                <option value="Excuse" {% if e.PassStatus=='Excuse' %}selected{% endif %}>بعذر</option>
+                                            </select>
+
+                                            <button class="btn btn-primary save-btn" data-eid="{{ e.EnrollmentID }}">💾</button>
+                                        </div>
+
+                                        <!-- مكان ظهور رسالة النجاح أو الخطأ -->
+                                        <div id="msg-{{ e.EnrollmentID }}" class="small mt-1"></div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                        <p class="text-muted text-center py-4"> لا يوجد طلاب مسجلين في هذه الدورة.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div> 
+    {% endif %} 
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // عند الضغط على زر الحفظ
+    document.querySelectorAll('.save-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const eid = this.getAttribute('data-eid');
+            const grade = document.getElementById('grade-' + eid).value;
+            const pass_status = document.getElementById('pass-' + eid).value;
+            const msgDiv = document.getElementById('msg-' + eid);
+
+            // إذا ما فيش تغيير، لا نرسل
+            if (!grade && !pass_status) {
+                msgDiv.innerHTML = '<span class="text-muted">لا تغييرات</span>';
+                return;
+            }
+
+            // إرسال البيانات عبر AJAX
+            fetch("{{ url_for('training_enrollment_update', eid=0) }}".replace('/0', '/' + eid), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'grade': grade || '',
+                    'pass_status': pass_status || '',
+                    // الحقول الأخرى إذا أضفتها لاحقًا
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    msgDiv.innerHTML = '<span class="text-success">✔️ تم الحفظ</span>';
+                    
+                    // إخفاء الرسالة بعد 2 ثانية
+                    setTimeout(() => { msgDiv.innerHTML = ''; }, 2000);
+                } else {
+                    msgDiv.innerHTML = '<span class="text-danger">❌ خطأ: ' + (data.message || 'غير معروف') + '</span>';
+                }
+            })
+            .catch(err => {
+                msgDiv.innerHTML = '<span class="text-danger">❌ فشل الاتصال</span>';
+                console.error(err);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

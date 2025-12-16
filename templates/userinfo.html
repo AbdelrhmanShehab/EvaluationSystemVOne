@@ -415,14 +415,11 @@
 
             <div class="filter-group">
                 <label class="filter-label">المسمى الوظيفي:</label>
-                <select name="position" class="filter-select">
-                    <option value="">جميع المسميات</option>
-                    {% for pos in positions %}
-                    <option value="{{ pos.PositionID }}" {% if request.args.get('position') == pos.PositionID|string %}selected{% endif %}>
-                        {{ pos.PositionName }}
-                    </option>
-                    {% endfor %}
-                </select>
+                <input type="text" 
+                    name="title" 
+                    class="filter-input" 
+                    placeholder="مثال: مدير مبيعات، مهندس..." 
+                    value="{{ request.args.get('title', '') }}">
             </div>
         </div>
 
@@ -443,10 +440,10 @@
 </div>
 
 {% if is_admin %}
-<div class="page-actions">
+<!-- <div class="page-actions">
     <a href="{{ url_for('userinfo_add') }}" class="btn">+ إضافة موظف جديد</a>
     <a href="{{ url_for('userinfo_list') }}" class="btn btn-outline">عرض الكل</a>
-</div>
+</div> -->
 {% endif %}
 
 <table>
@@ -518,9 +515,9 @@
                 </span>
                 القسم
             </th>
-            <th onclick="sortTable('PositionID')">
+            <th onclick="sortTable('TITLE')">
                 <span class="sort-indicator">
-                    {% if request.args.get('sort') == 'PositionID' %}
+                    {% if request.args.get('sort') == 'TITLE' %}
                         {% if request.args.get('order') == 'asc' %}↑{% else %}↓{% endif %}
                     {% endif %}
                 </span>
@@ -564,7 +561,7 @@
 
             <td>{{ 'ذكر' if u.GENDER == 'M' else 'أنثى' if u.GENDER == 'F' else '-' }}</td>
             
-            <td>{{ u.DEPTNAME or '-' }}</td>      <td>{{ u.PositionName or '-' }}</td>  <td>
+            <td>{{ u.DEPTNAME or '-' }}</td>      <td>{{ u.TITLE or '-' }}</td>  <td>
                 <img src="{{ url_for('user_pic', user_id=u.USERID) }}" alt="صورة الموظف" width="40" height="40"
                      style="border-radius: 50%; object-fit: cover; border: 1px solid #ddd;">
             </td>
@@ -577,9 +574,7 @@
                     <a href="{{ url_for('userinfo_edit', uid=u.USERID) }}" class="btn-action btn-warning">
                         ✏️ تعديل
                     </a>
-                    <a href="{{ url_for('userinfo_archive', uid=u.USERID) }}" class="btn-action btn-danger">
-                        🗑️ حذف
-                    </a>
+                   
                     {% endif %}
                 </div>
             </td>

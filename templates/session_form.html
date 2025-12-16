@@ -1,0 +1,156 @@
+{% extends "layout.html" %}
+{% block title %}جلسة تدريب{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <h4 class="fw-bold mb-4">🎓 {{ action }} جلسة تدريب</h4>
+
+    <div class="card shadow-sm p-4">
+
+        <form method="POST">
+
+            <div class="mb-3">
+                <label class="form-label">الدورة</label>
+                <select name="course_id" class="form-select" required>
+                    {% for c in courses %}
+                        <option value="{{ c.TrainingCourseID }}"
+                            {% if training_session and training_session.CourseID == c.TrainingCourseID %}selected{% endif %}>
+                            {{ c.TrainingCourseText }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">تاريخ البداية</label>
+                    <input type="date" name="session_date" class="form-control" required
+                           value="{{ training_session.SessionDate if training_session else '' }}">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">تاريخ النهاية</label>
+                    <input type="date" name="end_date" class="form-control"
+                           value="{{ training_session.EndDate if training_session else '' }}">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">المكان</label>
+                <input type="text" name="location" class="form-control"
+                       value="{{ training_session.Location if training_session else '' }}">
+            </div>
+
+            <hr>
+
+            <h5 class="fw-bold text-primary mb-3">👨‍🏫 بيانات المدرب</h5>
+
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" name="is_external" id="isExternalCheck"
+                       onchange="toggleTrainerType()"
+                       {% if training_session and training_session.IsExternal %}checked{% endif %}>
+                <label class="form-check-label fw-bold" for="isExternalCheck">مدرب خارجي؟</label>
+            </div>
+
+            <div id="internalTrainerDiv">
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted">تصفية حسب القسم (اختياري)</label>
+                    <select id="deptFilter" class="form-select" onchange="filterInstructors()">
+                        <option value="">-- كل الأقسام --</option>
+                        {% for d in depts %}
+                            <option value="{{ d.DEPTID }}">{{ d.DEPTNAME }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">اختر المدرب الداخلي</label>
+                    <select class="form-select" name="instructor" id="instructorSelect">
+                        <option value="">-- اختر موظف --</option>
+                        {% for u in instructors %}
+                            <option value="{{ u.USERID }}" data-dept="{{ u.DEFAULTDEPTID }}"
+                            {% if training_session and training_session.InstructorID == u.USERID %}selected{% endif %}>
+                                {{ u.NAME }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="externalTrainerDiv" style="display: none;">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>اسم المدرب الخارجي</label>
+                        <input type="text" name="external_name" class="form-control"
+                               value="{{ training_session.ExternalTrainerName if training_session else '' }}">
+                </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>الشركة / الجهة</label>
+                        <input type="text" name="external_company" class="form-control"
+                               value="{{ training_session.ExternalCompany if training_session else '' }}">
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="mb-3">
+                <label class="form-label">عدد المقاعد (اختياري)</label>
+                <input type="number" name="max_seats" class="form-control"
+                       value="{{ training_session.MaxSeats if training_session else '' }}">
+            </div>
+
+            <button class="btn btn-success">💾 حفظ</button>
+            <a href="{{ url_for('training_sessions') }}" class="btn btn-secondary">🔙 رجوع</a>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+function toggleTrainerType() {
+    var isExternal = document.getElementById('isExternalCheck').checked;
+    var internalDiv = document.getElementById('internalTrainerDiv');
+    var externalDiv = document.getElementById('externalTrainerDiv');
+
+    if (isExternal) {
+        internalDiv.style.display = 'none';
+        externalDiv.style.display = 'block';
+    } else {
+        internalDiv.style.display = 'block';
+        externalDiv.style.display = 'none';
+    }
+}
+
+function filterInstructors() {
+    // 1. Get selected Dept ID
+    var deptId = document.getElementById('deptFilter').value;
+    var select = document.getElementById('instructorSelect');
+    var options = select.options;
+
+    // 2. Loop options and show/hide
+    for (var i = 1; i < options.length; i++) { // Start at 1 to skip default option
+        var opt = options[i];
+        var empDept = opt.getAttribute('data-dept');
+
+        if (deptId === "" || empDept == deptId) {
+            opt.style.display = ""; // Show
+        } else {
+            opt.style.display = "none"; // Hide
+        }
+    }
+    
+    // Reset selection to default when filtering
+    select.value = "";
+}
+
+// Run on load to set initial state (for Edit mode)
+document.addEventListener('DOMContentLoaded', function() {
+    toggleTrainerType();
+});
+</script>
+{% endblock %}

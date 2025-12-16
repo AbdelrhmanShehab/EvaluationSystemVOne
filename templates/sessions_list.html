@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% block title %}الجلسات التدريبية{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold">📅 الجلسات التدريبية</h4>
+        <a href="{{ url_for('training_session_add') }}" class="btn btn-primary">➕ إضافة جلسة</a>
+    </div>
+
+    <div class="card shadow-sm p-3">
+
+        <table class="table table-bordered text-center align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>الدورة</th>
+                    <th>من</th>
+                    <th>إلى</th>
+                    <th>المدرب</th>
+                    <th>المقاعد</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sessions %}
+                <tr>
+                    <td>{{ s.TrainingCourseText }}</td>
+                    <td>{{ s.SessionDate }}</td>
+                    <td>{{ s.EndDate or '-' }}</td>
+                    <td>
+                        {% if s.IsExternal %}
+                            {{ s.ExternalTrainerName }} (خارجي)
+                        {% else %}
+                            {{ s.InstructorName or '-' }}
+                        {% endif %}
+                    </td>
+                    <td>{{ s.MaxSeats or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('training_session_detail', sid=s.SessionID) }}"
+                        class="btn btn-sm btn-info">👁️ عرض</a>
+                        <a href="{{ url_for('training_session_edit', sid=s.SessionID) }}"
+                        class="btn btn-sm btn-warning">✏️ تعديل</a>
+                        
+                        <!-- زر الحذف الجديد -->
+                        <form action="{{ url_for('training_session_delete', sid=s.SessionID) }}" 
+                            method="POST" 
+                            style="display:inline;"
+                            onsubmit="return confirm('⚠️ هل أنت متأكد من حذف هذه الجلسة التدريبية؟\nسيتم حذف جميع التسجيلات والحضور المرتبطة بها نهائيًا!');">
+                            <button type="submit" class="btn btn-sm btn-danger">🗑️ حذف</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+{% endblock %}
